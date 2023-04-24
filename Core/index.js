@@ -2,7 +2,7 @@ const requestHook = require('../helps/request')
 const noticeMsg = require('../helps/notice')
 
 let {
-  runCount, pollingTime, devRobotWebHook,
+  pollingTime, devRobotWebHook,
   proRobotWebHook, robotContent, statusList,
   aliStatus
 } = require('../files/config')
@@ -10,10 +10,9 @@ let {
 let env = 'dev'
 let cookie = ''
 let xsrfToken = ''
-let runPipelineIds = []
 
 // 运行流水线
-const runPipeline = (item)=> {
+const runPipeline = (item, pipelines, count)=> {
   //  参数
   const options = {
     hostname: 'flow.aliyun.com',
@@ -26,30 +25,32 @@ const runPipeline = (item)=> {
     }
   }
   requestHook(options, ()=> {
-    runCount++
+    count.value--
     let data = {
       "msgtype": "markdown",
       "markdown": {
         "content": `${robotContent}`
       }
     }
-    //  当执行的是生产指令流水线,发送卡点群通知
-    if (env === 'pro') {
-      let urls = '\n'
-      let urlTemplate = 'https://flow.aliyun.com/pipelines/{pipelineId}/current'
-      runPipelineIds.forEach(_item => {
-        urls += `\n ${ _item.name }：\n ${urlTemplate.replace('{pipelineId}', _item.pipelineId)} \n`
-      })
-      noticeMsg(proRobotWebHook, data, null, 'waiting', urls)
+    if (!count.value) {
+      // 当执行的是生产指令流水线,发送卡点群通知
+      if (env === 'pro') {
+        let urls = '\n'
+        let urlTemplate = 'https://flow.aliyun.com/pipelines/{pipelineId}/current'
+        pipelines.forEach(_item => {
+          urls += `\n ${ _item.name }：\n ${urlTemplate.replace('{pipelineId}', _item.pipelineId)} \n`
+        })
+        noticeMsg(proRobotWebHook, data, null, 'waiting', urls)
+      }
+      // 同时流水线通知群也要
+      noticeMsg(devRobotWebHook, data, null, 'running')
     }
-    // 同时流水线通知群也要
-    noticeMsg(devRobotWebHook, data, null, 'running')
     console.log(`${item.name}正在执行!`)
   })
 }
 
 // 取消流水线
-const cancelPipeline = (item, instanceId)=> {
+const cancelPipeline = (item, pipelines, count, instanceId)=> {
   //  参数
   const options = {
     hostname: 'flow.aliyun.com',
@@ -62,12 +63,12 @@ const cancelPipeline = (item, instanceId)=> {
     }
   }
   requestHook(options, (data)=> {
-    runPipeline(item)
+    runPipeline(item, pipelines, count)
   })
 }
 
 // 获取流水线结果
-const resultPipeline = async (item, timer)=> {
+const resultPipeline = async (item)=> {
   return new Promise((resolve)=> {
     //  参数
     const options = {
@@ -88,7 +89,7 @@ const resultPipeline = async (item, timer)=> {
 }
 
 // 获取流水线历史
-const historyPipeline = (item)=> {
+const historyPipeline = (item, pipelines, count)=> {
   //  参数
   const options = {
     hostname: 'flow.aliyun.com',
@@ -110,10 +111,10 @@ const historyPipeline = (item)=> {
     if (!dataList.length) return
     if (dataList[0].status === 'RUNNING' || dataList[0].status === 'WAITING') {
       //  取消执行
-      cancelPipeline(item, dataList[0].id)
+      cancelPipeline(item, pipelines, count, dataList[0].id)
     }else {
       //  直接执行
-      runPipeline(item)
+      runPipeline(item, pipelines, count)
     }
   })
 }
@@ -123,23 +124,22 @@ const startRunning = (query)=> {
   env = query.env
   cookie = query.cookie
   xsrfToken = query['x-xsrf-token']
-  const list = query.list
-  runPipelineIds = query.list.map(it=> it.pipelineId)
+  const pipelines = query.list
 
-  robotContent = `当前正在运行<font color=\"warning\">${runPipelineIds.length}</font>条流水线，如下:\n\n`
-  runPipelineIds = runPipelineIds.map(item=> {
-    item = list.find(it=> it.pipelineId === item)
-    historyPipeline(item)
+  let count = {
+    value: pipelines.length
+  }
+
+  robotContent = `当前正在运行<font color=\"warning\">${pipelines.length}</font>条流水线，如下:\n\n`
+  pipelines.forEach(item=> {
+    historyPipeline(item, pipelines, count)
     const { msg, color } = statusList[item.status]
     robotContent += `
     >    流水线名称:  [${item.name}](https://flow.aliyun.com/pipelines/${item.pipelineId}/current)
     地址:  https://flow.aliyun.com/pipelines/${item.pipelineId}/current
     当前状态:  <font color=\"${color}\">${msg}</font>\n`
-
-    return item
   })
 
-  const pipelines = runPipelineIds
   const timer = setInterval(()=> {
     const promiseList = pipelines.map(item=> resultPipeline(item, timer))
     Promise.all(promiseList).then(()=> {
