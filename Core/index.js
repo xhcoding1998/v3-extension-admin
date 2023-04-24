@@ -2,12 +2,14 @@ const requestHook = require('../helps/request')
 const noticeMsg = require('../helps/notice')
 
 let {
-  env, runCount, pollingTime, devRobotWebHook,
+  runCount, pollingTime, devRobotWebHook,
   proRobotWebHook, robotContent, statusList,
   aliStatus
 } = require('../files/config')
 
+let env = 'dev'
 let cookie = ''
+let xsrfToken = ''
 let runPipelineIds = []
 
 // 运行流水线
@@ -19,7 +21,8 @@ const runPipeline = (item)=> {
     method: 'post',
     headers: {
       'content-Type': 'application/x-www-form-urlencoded',
-      'cookie': cookie
+      'cookie': cookie,
+      'x-xsrf-token': xsrfToken
     }
   }
   requestHook(options, ()=> {
@@ -54,7 +57,8 @@ const cancelPipeline = (item, instanceId)=> {
     method: 'post',
     headers: {
       'content-Type': 'application/x-www-form-urlencoded',
-      'cookie': cookie
+      'cookie': cookie,
+      'x-xsrf-token': xsrfToken
     }
   }
   requestHook(options, (data)=> {
@@ -72,7 +76,8 @@ const resultPipeline = async (item, timer)=> {
       method: 'get',
       headers: {
         'content-Type': 'application/x-www-form-urlencoded',
-        'cookie': cookie
+        'cookie': cookie,
+        'x-xsrf-token': xsrfToken
       },
     }
     requestHook(options, (data)=> {
@@ -91,7 +96,8 @@ const historyPipeline = (item)=> {
     method: 'get',
     headers: {
       'content-Type': 'application/x-www-form-urlencoded',
-      'cookie': cookie
+      'cookie': cookie,
+      'x-xsrf-token': xsrfToken
     },
     params: {
       pageStart: 0,
@@ -99,8 +105,6 @@ const historyPipeline = (item)=> {
     }
   }
 
-  // console.log(merge2cookie(cookies));
-  // return
   requestHook(options, (data)=> {
     const { dataList } = data.object
     if (!dataList.length) return
@@ -116,7 +120,9 @@ const historyPipeline = (item)=> {
 
 //  开始运行
 const startRunning = (query)=> {
+  env = query.env
   cookie = query.cookie
+  xsrfToken = query['x-xsrf-token']
   const list = query.list
   runPipelineIds = query.list.map(it=> it.pipelineId)
 

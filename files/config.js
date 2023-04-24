@@ -5,8 +5,8 @@ let config = {
   pollingTime: 6000 * 10 * 10 , // 轮询查询接口间隔时间,单位: 分
   firstTip: false,
   //  机器人webhook地址
-  devRobotWebHook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=773e9022-c8fd-484e-9d3b-30d5408f90a0', // 通知
-  proRobotWebHook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2be9193b-c4fc-418c-bb7e-5cab1d755e73', //卡点
+  devRobotWebHook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=ef826a97-9f71-4329-b007-7ff8b701ef42', // 通知
+  proRobotWebHook: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=ef826a97-9f71-4329-b007-7ff8b701ef42', //卡点
   //  机器人发送信息的content内容
   robotContent: '',
   //  状态列表
