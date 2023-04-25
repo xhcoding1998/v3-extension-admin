@@ -79,47 +79,46 @@ module.exports = class Pipeline {
    * 开始运行
    * @param item
    */
-  runPipeline(item) {
+  runPipeline = async (item) => {
     //  参数
     const options = this.handleOptions({
       url: `/${item.pipelineId}/execute`,
       method: 'post',
     })
-    request(options, ()=> {
-      this.count--
-      let data = {
-        "msgtype": "markdown",
-        "markdown": {
-          "content": `${this.robotContent}`
-        }
+    await request(options)
+    this.count--
+    let data = {
+      "msgtype": "markdown",
+      "markdown": {
+        "content": `${this.robotContent}`
       }
-      if (!this.count) {
-        // 当执行的是生产指令流水线,发送卡点群通知
-        if (this.env === 'pro') {
-          let urls = '\n'
-          let urlTemplate = 'https://flow.aliyun.com/pipelines/{pipelineId}/current'
-          this.pipelines.forEach(_item => {
-            urls += `\n ${ _item.name }：\n ${urlTemplate.replace('{pipelineId}', _item.pipelineId)} \n`
-          })
-          const config = {
-            robotWebHook: this.proRobotWebHook,
-            msgData: data,
-            type: 'waiting',
-            urls: urls,
-            runAdmins: this.runAdmins
-          }
-          noticeMsg(config)
-        }
-        // 同时流水线通知群也要
+    }
+    if (!this.count) {
+      // 当执行的是生产指令流水线,发送卡点群通知
+      if (this.env === 'pro') {
+        let urls = '\n'
+        let urlTemplate = 'https://flow.aliyun.com/pipelines/{pipelineId}/current'
+        this.pipelines.forEach(_item => {
+          urls += `\n ${ _item.name }：\n ${urlTemplate.replace('{pipelineId}', _item.pipelineId)} \n`
+        })
         const config = {
-          robotWebHook: this.devRobotWebHook,
+          robotWebHook: this.proRobotWebHook,
           msgData: data,
-          type: 'running',
+          type: 'waiting',
+          urls: urls,
+          runAdmins: this.runAdmins
         }
         noticeMsg(config)
       }
-      console.log(`${item.name}正在执行!`)
-    })
+      // 同时流水线通知群也要
+      const config = {
+        robotWebHook: this.devRobotWebHook,
+        msgData: data,
+        type: 'running',
+      }
+      noticeMsg(config)
+    }
+    console.log(`${item.name}正在执行!`)
   }
 
   /**
@@ -127,15 +126,14 @@ module.exports = class Pipeline {
    * @param item
    * @param instanceId
    */
-  cancelPipeline(item, instanceId) {
+  cancelPipeline = async (item, instanceId) => {
     //  参数
     const options = this.handleOptions({
       url: `/${item.pipelineId}/instances/${instanceId}/cancel`,
       method: 'post',
     })
-    request(options, (data)=> {
-      this.runPipeline(item)
-    })
+    await request(options)
+    await this.runPipeline(item)
   }
 
   /**
@@ -143,17 +141,16 @@ module.exports = class Pipeline {
    * @param item
    * @returns {Promise<unknown>}
    */
-  resultPipeline(item) {
-    return new Promise((resolve)=> {
+  resultPipeline = (item) => {
+    return new Promise(async (resolve)=> {
       //  参数
       const options = this.handleOptions({
         url: `/${item.pipelineId}/instances/latest`,
         method: 'get',
       })
-      request(options, (data)=> {
-        item.status = aliStatus[data.object.status]
-        resolve()
-      })
+      const data = await request(options)
+      item.status = aliStatus[data.object.status]
+      resolve()
     })
   }
 
@@ -161,7 +158,7 @@ module.exports = class Pipeline {
    * 流水线执行历史
    * @param item
    */
-  historyPipeline(item) {
+  historyPipeline = async (item) => {
     //  参数
     const options = this.handleOptions({
       url: `/${item.pipelineId}/instances`,
@@ -171,17 +168,16 @@ module.exports = class Pipeline {
         pageSize: 1
       }
     })
-    request(options, (data)=> {
-      const { dataList } = data.object
-      if (!dataList.length) return
-      if (dataList[0].status === 'RUNNING' || dataList[0].status === 'WAITING') {
-        //  取消执行
-        this.cancelPipeline(item, dataList[0].id)
-      }else {
-        //  直接执行
-        this.runPipeline(item)
-      }
-    })
+    const data = await request(options)
+    const { dataList } = data.object
+    if (!dataList.length) return
+    if (dataList[0].status === 'RUNNING' || dataList[0].status === 'WAITING') {
+      //  取消执行
+      await this.cancelPipeline(item, dataList[0].id)
+    }else {
+      //  直接执行
+      await this.runPipeline(item)
+    }
   }
 
   /**
