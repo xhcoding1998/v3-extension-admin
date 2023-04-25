@@ -1,5 +1,5 @@
 const request = require('../helps/request')
-const initPipelines = async (cookie)=> {
+const initPipelines = async (query)=> {
   //  获取文件中...
   //  参数
   const options = {
@@ -8,11 +8,11 @@ const initPipelines = async (cookie)=> {
     method: 'get',
     headers: {
       'content-Type': 'application/x-www-form-urlencoded',
-      'cookie': cookie
+      'cookie': query.cookie
     },
     params: {
-      pipelineName: 'fmp',
-      searchPipelineName: 'fmp',
+      pipelineName: query.keywords || '',
+      searchPipelineName: query.keywords || '',
       pageSize: 1000,
       pageStart: 0,
       pageSort: 'ID'

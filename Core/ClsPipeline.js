@@ -4,6 +4,7 @@ const { aliStatus, statusList } = require("../files/config");
 
 module.exports = class Pipeline {
   env = 'dev' // 环境
+  runLastedBranch = false
   runAdmins = [ 13060870976 ] // 卡点管理员
   cookie = '' // 阿里云cookie
   xsrfToken = ''  // 阿里云x-xsrf-token
@@ -20,6 +21,7 @@ module.exports = class Pipeline {
   constructor(props) {
     //  初始化数据
     this.env = props.env
+    this.runLastedBranch = props.runLastedBranch
     this.cookie = props.cookie
     this.xsrfToken = props['x-xsrf-token']
     this.pipelines = props.list
@@ -37,7 +39,7 @@ module.exports = class Pipeline {
   handleOptions(props) {
     return {
       hostname: 'flow.aliyun.com',
-      path: '/ec/ajax/pipelines' + props.url,
+      path: props.fullPath || '/ec/ajax/pipelines' + props.url,
       method: props.method || 'get',
       headers: {
         'content-Type': 'application/x-www-form-urlencoded',
@@ -51,7 +53,7 @@ module.exports = class Pipeline {
   /**
    * 开始执行
    */
-  startRunning() {
+  startRunning = async ()=> {
     this.robotContent = `当前正在运行<font color=\"warning\">${this.pipelines.length}</font>条流水线，如下:\n\n`
     this.pipelines.forEach(item=> {
       this.historyPipeline(item)
@@ -74,16 +76,66 @@ module.exports = class Pipeline {
       })
     }, this.pollingTime)
   }
-
+  /**
+   * 最新一次流水线记录
+   * @param item
+   * @returns {Promise<void>}
+   */
+  lastPipeline = async (item)=> {
+    if (this.runLastedBranch) {
+      //  参数
+      const options = this.handleOptions({
+        url: `/${item.pipelineId}/instances/latest`,
+        method: 'get',
+        params: {
+          '_input_charset': 'utf-8',
+        }
+      })
+      const data =  await request(options)
+      const context = JSON.parse(data.object.context)
+      const sources = JSON.parse(context.sources)
+      await this.branchPipeline(item, sources[0].data)
+    }else {
+      await this.runPipeline({}, item)
+    }
+  }
+  /**
+   * 获取流水线分支
+   * @param item
+   * @param projectId
+   * @param connection
+   * @param sign
+   * @returns {Promise<void>}
+   */
+  branchPipeline = async (item, { projectId, connection, sign })=> {
+    //  参数
+    const options = this.handleOptions({
+      fullPath: `/codeUp/api/branches`,
+      method: 'get',
+      params: {
+        '_input_charset': 'utf-8',
+        projectId: projectId,
+        connectionId: connection,
+        keyword: ''
+      }
+    })
+    const data = await request(options)
+    const params = {
+      [sign]: data[0].name
+    }
+    await this.runPipeline(params, item)
+  }
   /**
    * 开始运行
+   * @param params
    * @param item
    */
-  runPipeline = async (item) => {
+  runPipeline = async (params, item) => {
     //  参数
     const options = this.handleOptions({
       url: `/${item.pipelineId}/execute`,
       method: 'post',
+      params
     })
     await request(options)
     this.count--
@@ -133,7 +185,7 @@ module.exports = class Pipeline {
       method: 'post',
     })
     await request(options)
-    await this.runPipeline(item)
+    await this.lastPipeline(item)
   }
 
   /**
@@ -176,7 +228,7 @@ module.exports = class Pipeline {
       await this.cancelPipeline(item, dataList[0].id)
     }else {
       //  直接执行
-      await this.runPipeline(item)
+      await this.lastPipeline(item)
     }
   }
 

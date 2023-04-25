@@ -25,8 +25,8 @@ app.use(cors({
 }));
 
 router.get('/list', async (ctx, next) => {
-  const { cookie = '' } = ctx.request.query
-  const res = await initPipelines(cookie)
+  const query = ctx.request.query
+  const res = await initPipelines(query)
   ctx.response.body = {
     status: 200,
     list: res
