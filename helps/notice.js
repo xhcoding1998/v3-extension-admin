@@ -11,7 +11,7 @@ const msgType = {
     "msgtype": "text",
     "text": {
       "content": "哈喽,帮忙过下以下卡点",
-      "mentioned_mobile_list": runAdmins
+      "mentioned_mobile_list": []
     }
   },
   ended: {
@@ -23,11 +23,16 @@ const msgType = {
   }
 }
 
-const noticeMsg = (robotWebHook, msgData, timer = null, type = 'running', urls = '')=> {
+const noticeMsg = (
+  {
+    robotWebHook = '', msgData = {}, timer = null,
+    type = 'running', urls = '',  runAdmins = []
+  })=> {
   //  需要卡点，修改msgData发到卡点群
   if (type === 'waiting') {
     msgType[type].text.content += urls
     msgData = msgType[type]
+    msgData.text.mentioned_mobile_list = runAdmins
   }
   const req = https.request(robotWebHook,
     {
@@ -45,11 +50,20 @@ const noticeMsg = (robotWebHook, msgData, timer = null, type = 'running', urls =
         }
         if (timer && data && data.errcode !== 0) {
           timer && clearInterval(timer)
-          noticeMsg(robotWebHook, msgType['error'])
+          const config = {
+            robotWebHook,
+            msgData: msgType['error'],
+          }
+          noticeMsg(config)
         }
         //  运行成功，额外发一条通知@全部人
         if (type === 'ended') {
-          noticeMsg(robotWebHook, msgType[type], timer)
+          const config = {
+            robotWebHook,
+            msgData: msgType[type],
+            timer
+          }
+          noticeMsg(config)
         }
       })
     }).on('error', (e) => {

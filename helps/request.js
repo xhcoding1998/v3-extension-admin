@@ -2,7 +2,7 @@ const https = require('https');
 const url = require('url')
 
 //  请求hook封装
-const requestHook = (options, callback)=> {
+const request = (options, callback)=> {
   options.agent = new https.Agent({
     rejectUnauthorized: false
   })
@@ -38,4 +38,4 @@ const requestHook = (options, callback)=> {
   req.end(JSON.stringify(options.data));
 }
 
-module.exports = requestHook
+module.exports = request
