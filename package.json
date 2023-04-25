@@ -4,10 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node dev.js",
-    "pro": "node pro.js",
-    "list": "node list.js"
+    "dev": "node index.js"
   },
   "author": "",
   "license": "ISC",

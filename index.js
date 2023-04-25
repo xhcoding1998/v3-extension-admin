@@ -55,5 +55,5 @@ app.use(async (ctx, next)=>{
 app.use(router.routes())
 
 app.listen(9923, ()=> {
-  console.log('koa初体验启动成功！')
+  console.log('服务启动成功！')
 })
