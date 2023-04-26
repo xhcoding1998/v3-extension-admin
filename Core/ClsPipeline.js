@@ -49,6 +49,13 @@ module.exports = class Pipeline {
       params: props.params || {}
     }
   }
+  handleRobotContent(item) {
+    const { msg, color } = statusList[item.status]
+    return `
+      >    流水线名称:  [${item.name}](https://flow.aliyun.com/pipelines/${item.pipelineId}/current)
+      地址:  https://flow.aliyun.com/pipelines/${item.pipelineId}/current
+      当前状态:  <font color=\"${color}\">${msg}</font>\n`
+  }
 
   /**
    * 开始执行
@@ -57,11 +64,7 @@ module.exports = class Pipeline {
     this.robotContent = `当前正在运行<font color=\"warning\">${this.pipelines.length}</font>条流水线，如下:\n\n`
     this.pipelines.forEach(item=> {
       this.historyPipeline(item)
-      const { msg, color } = statusList[item.status]
-      this.robotContent += `
-      >    流水线名称:  [${item.name}](https://flow.aliyun.com/pipelines/${item.pipelineId}/current)
-      地址:  https://flow.aliyun.com/pipelines/${item.pipelineId}/current
-      当前状态:  <font color=\"${color}\">${msg}</font>\n`
+      this.robotContent += this.handleRobotContent(item)
     })
 
     this.timer = setInterval(()=> {
@@ -240,11 +243,7 @@ module.exports = class Pipeline {
     this.robotContent = `当前正在运行<font color=\"warning\">${this.pipelines.length}</font>条流水线，如下:\n\n`
 
     this.pipelines.map(item=> {
-      const { msg, color } = statusList[item.status]
-      this.robotContent += `
-      >    流水线名称:  [${item.name}](https://flow.aliyun.com/pipelines/${item.pipelineId}/current)
-      地址:  https://flow.aliyun.com/pipelines/${item.pipelineId}/current
-      当前状态:  <font color=\"${color}\">${msg}</font>\n`
+      this.robotContent += this.robotContent += this.handleRobotContent(item)
     })
 
     let data = {
