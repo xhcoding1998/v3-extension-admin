@@ -243,7 +243,7 @@ module.exports = class Pipeline {
     this.robotContent = `当前正在运行<font color=\"warning\">${this.pipelines.length}</font>条流水线，如下:\n\n`
 
     this.pipelines.map(item=> {
-      this.robotContent += this.robotContent += this.handleRobotContent(item)
+      this.robotContent += this.handleRobotContent(item)
     })
 
     let data = {
