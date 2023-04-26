@@ -10,7 +10,7 @@ const msgType = {
   waiting: {
     "msgtype": "text",
     "text": {
-      "content": "哈喽,帮忙过下以下卡点",
+      "content": "",
       "mentioned_mobile_list": []
     }
   },
@@ -30,7 +30,7 @@ const noticeMsg = (
   })=> {
   //  需要卡点，修改msgData发到卡点群
   if (type === 'waiting') {
-    msgType[type].text.content += urls
+    msgType[type].text.content = "哈喽,帮忙过下以下卡点" + urls
     msgData = msgType[type]
     msgData.text.mentioned_mobile_list = runAdmins
   }

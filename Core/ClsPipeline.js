@@ -53,8 +53,9 @@ module.exports = class Pipeline {
     const { msg, color } = statusList[item.status]
     return `
       >    流水线名称:  [${item.name}](https://flow.aliyun.com/pipelines/${item.pipelineId}/current)
-      地址:  https://flow.aliyun.com/pipelines/${item.pipelineId}/current
-      当前状态:  <font color=\"${color}\">${msg}</font>\n`
+    地址:  https://flow.aliyun.com/pipelines/${item.pipelineId}/current
+    运行分支：<font>${ item.branchName || '默认分支' }</font>
+    当前状态:  <font color=\"${color}\">${msg}</font>\n`
   }
 
   /**
@@ -64,7 +65,6 @@ module.exports = class Pipeline {
     this.robotContent = `当前正在运行<font color=\"warning\">${this.pipelines.length}</font>条流水线，如下:\n\n`
     this.pipelines.forEach(item=> {
       this.historyPipeline(item)
-      this.robotContent += this.handleRobotContent(item)
     })
 
     this.timer = setInterval(()=> {
@@ -124,8 +124,9 @@ module.exports = class Pipeline {
     })
     const data = await request(options)
     const params = {
-      [sign]: data[0].name
+      [sign]: data.object[0].name
     }
+    item.branchName = data.object[0].name
     await this.runPipeline(params, item)
   }
   /**
@@ -134,6 +135,7 @@ module.exports = class Pipeline {
    * @param item
    */
   runPipeline = async (params, item) => {
+    this.robotContent += this.handleRobotContent(item)
     //  参数
     const options = this.handleOptions({
       url: `/${item.pipelineId}/execute`,
@@ -154,7 +156,8 @@ module.exports = class Pipeline {
         let urls = '\n'
         let urlTemplate = 'https://flow.aliyun.com/pipelines/{pipelineId}/current'
         this.pipelines.forEach(_item => {
-          urls += `\n ${ _item.name }：\n ${urlTemplate.replace('{pipelineId}', _item.pipelineId)} \n`
+          urls += `\n流水线名称：${ _item.name }：\n运行分支：${ item.branchName || '默认分支' }\n链接：${urlTemplate.replace('{pipelineId}', _item.pipelineId)}
+          `
         })
         const config = {
           robotWebHook: this.proRobotWebHook,
