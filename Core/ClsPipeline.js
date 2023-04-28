@@ -49,6 +49,12 @@ module.exports = class Pipeline {
       params: props.params || {}
     }
   }
+
+  /**
+   * 处理机器人格式
+   * @param item
+   * @returns {string}
+   */
   handleRobotContent(item) {
     const { msg, color } = statusList[item.status]
     return `
