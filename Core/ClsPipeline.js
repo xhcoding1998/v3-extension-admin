@@ -15,15 +15,18 @@ module.exports = class Pipeline {
   pollingTime = 6000 * 10 * 10  // 轮询时间
 
   // 流水线发布群通知机器人
-  devRobotWebHook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=773e9022-c8fd-484e-9d3b-30d5408f90a0'
+  devRobotWebHook = ''
   // 流水线卡点群通知机器人
-  proRobotWebHook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2be9193b-c4fc-418c-bb7e-5cab1d755e73'
+  proRobotWebHook = ''
   constructor(props) {
     //  初始化数据
     this.env = props.env
     this.runLastedBranch = props.runLastedBranch
     this.cookie = props.cookie
     this.xsrfToken = props['x-xsrf-token']
+    this.devRobotWebHook = props.devRobotWebHook
+    this.proRobotWebHook = props.proRobotWebHook
+    this.sendProStatus = props.sendProStatus
     this.pipelines = props.list
     this.count = this.pipelines.length
 
@@ -158,7 +161,7 @@ module.exports = class Pipeline {
     }
     if (!this.count) {
       // 当执行的是生产指令流水线,发送卡点群通知
-      if (this.env === 'pro') {
+      if (this.env === 'pro' && this.sendProStatus) {
         let urls = '\n'
         let urlTemplate = 'https://flow.aliyun.com/pipelines/{pipelineId}/current'
         this.pipelines.forEach(_item => {
