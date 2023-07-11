@@ -1,5 +1,7 @@
 const request = require('../helps/request')
 const noticeMsg = require('../helps/notice')
+const querystring = require('querystring');
+
 const { aliStatus, statusList } = require("../files/config");
 
 module.exports = class Pipeline {
@@ -106,7 +108,8 @@ module.exports = class Pipeline {
       const data =  await request(options)
       const context = JSON.parse(data.object.context)
       const sources = JSON.parse(context.sources)
-      await this.branchPipeline(item, sources[0].data)
+
+      await this.branchPipeline(item, { ...sources[0].data, sign: sources[0].sign })
     }else {
       await this.runPipeline({}, item)
     }
@@ -136,14 +139,15 @@ module.exports = class Pipeline {
       [sign]: data.object[0].name
     }
     item.branchName = data.object[0].name
-    await this.runPipeline(params, item)
+
+    await this.runPipeline(params, item, true)
   }
   /**
    * 开始运行
    * @param params
    * @param item
    */
-  runPipeline = async (params, item) => {
+  runPipeline = async (params, item, haveBody = false) => {
     this.robotContent += this.handleRobotContent(item)
     //  参数
     const options = this.handleOptions({
@@ -151,6 +155,11 @@ module.exports = class Pipeline {
       method: 'post',
       params
     })
+
+    if(haveBody) {
+      options.body = querystring.stringify({ params: JSON.stringify(params) })
+    }
+
     await request(options)
     this.count--
     let data = {

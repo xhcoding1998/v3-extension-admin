@@ -38,7 +38,13 @@ const request = (options, callback)=> {
       options.params = {}
     }
     req.path += url.format({ query: options.params })
-    req.end(JSON.stringify(options.data));
+
+    if(options.body) {
+      req.write(options.body)
+      req.end()
+    }else {
+      req.end(JSON.stringify(options.data));
+    }
   })
 }
 
