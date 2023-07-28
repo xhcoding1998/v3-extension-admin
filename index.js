@@ -1,4 +1,4 @@
-const { initPipelines } = require('./Core/InitPipelines')
+const { initPipelines, branchPipelines } = require('./Core/InitPipelines')
 
 const Pipeline = require('./Core/ClsPipeline')
 
@@ -27,6 +27,15 @@ app.use(cors({
 router.get('/list', async (ctx, next) => {
   const query = ctx.request.query
   const res = await initPipelines(query)
+  ctx.response.body = {
+    status: 200,
+    list: res
+  }
+})
+
+router.get('/branch', async (ctx, next) => {
+  const query = ctx.request.query
+  const res = await branchPipelines(query)
   ctx.response.body = {
     status: 200,
     list: res
