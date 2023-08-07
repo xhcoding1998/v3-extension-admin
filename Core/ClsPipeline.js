@@ -96,23 +96,19 @@ module.exports = class Pipeline {
    * @returns {Promise<void>}
    */
   lastPipeline = async (item)=> {
-    if (this.runLastedBranch) {
-      //  参数
-      const options = this.handleOptions({
-        url: `/${item.pipelineId}/instances/latest`,
-        method: 'get',
-        params: {
-          '_input_charset': 'utf-8',
-        }
-      })
-      const data =  await request(options)
-      const context = JSON.parse(data.object.context)
-      const sources = JSON.parse(context.sources)
+    //  参数
+    const options = this.handleOptions({
+      url: `/${item.pipelineId}/instances/latest`,
+      method: 'get',
+      params: {
+        '_input_charset': 'utf-8',
+      }
+    })
+    const data =  await request(options)
+    const context = JSON.parse(data.object.context)
+    const sources = JSON.parse(context.sources)
 
-      await this.branchPipeline(item, { ...sources[0].data, sign: sources[0].sign })
-    }else {
-      await this.runPipeline({}, item)
-    }
+    await this.branchPipeline(item, sources[0].sign)
   }
   /**
    * 获取流水线分支
@@ -122,24 +118,11 @@ module.exports = class Pipeline {
    * @param sign
    * @returns {Promise<void>}
    */
-  branchPipeline = async (item, { projectId, connection, sign })=> {
-    //  参数
-    const options = this.handleOptions({
-      fullPath: `/codeUp/api/branches`,
-      method: 'get',
-      params: {
-        '_input_charset': 'utf-8',
-        projectId: projectId,
-        connectionId: connection,
-        keyword: ''
-      }
-    })
-    const data = await request(options)
+  branchPipeline = async (item, sign)=> {
     const params = {
-      [sign]: data.object[0].name
+      [sign]: item.branchName
     }
-    item.branchName = data.object[0].name
-
+    item.branchName = item.branchName
     await this.runPipeline(params, item, true)
   }
   /**

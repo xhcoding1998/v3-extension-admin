@@ -50,7 +50,7 @@ const branchPipelines = async (query)=> {
     }
   }
   const data = await request(options)
-  return data
+  return data.object
 }
 
 module.exports = {
