@@ -58,12 +58,12 @@ const noticeMsg = (
         }
         //  运行成功，额外发一条通知@全部人
         if (type === 'ended') {
-          const config = {
-            robotWebHook,
-            msgData: msgType[type],
-            timer
-          }
-          noticeMsg(config)
+          // const config = {
+          //   robotWebHook,
+          //   msgData: msgType[type],
+          //   timer
+          // }
+          // noticeMsg(config)
         }
       })
     }).on('error', (e) => {
